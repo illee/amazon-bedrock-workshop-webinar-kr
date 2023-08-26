@@ -20,7 +20,7 @@ Amazon Titan, Anthropic Claude, AI21 Jurassic 2와 같은 제너레이티브 AI 
 
     ![RAG Q&A](./images/52-rag-with-external-data.png)
 
-리트리벌 증강 생성(RAG)을 사용하면 이 문제를 극복할 수 있습니다.
+리트리벌 증강 생성(RAG)을 사용하면 이 문제를 극복할 수 있습니다. 
 
 ## How Retrieval Augmented Generation (RAG) works
 
@@ -30,6 +30,7 @@ RAG를 위한 준비 단계로 지식창고를 구축하는 문서를 고정된 
 
 ## Target audience
 비공개이거나 자주 변경되는 데이터 저장소를 보유한 고객. RAG 접근 방식은 두 가지 문제를 해결하며, 다음과 같은 문제를 겪고 있는 고객은 이 실습을 통해 이점을 얻을 수 있습니다.
+
 - 데이터의 최신성: 데이터가 지속적으로 변경되고 모델이 최신 정보만 제공해야 하는 경우.
 - 지식의 실제성: 모델이 이해하지 못할 수 있는 도메인별 지식이 있고 모델이 도메인 데이터에 따라 출력해야 하는 경우.
 
