@@ -491,3 +491,83 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, k=10):
 
     return results
 
+###########################################    
+### Chatbot Functions
+###########################################    
+
+# turn verbose to true to see the full logs and documents
+from langchain.chains import ConversationalRetrievalChain
+from langchain.schema import BaseMessage
+
+
+# We are also providing a different chat history retriever which outputs the history as a Claude chat (ie including the \n\n)
+_ROLE_MAP = {"human": "\n\nHuman: ", "ai": "\n\nAssistant: "}
+def _get_chat_history(chat_history):
+    buffer = ""
+    for dialogue_turn in chat_history:
+        if isinstance(dialogue_turn, BaseMessage):
+            role_prefix = _ROLE_MAP.get(dialogue_turn.type, f"{dialogue_turn.type}: ")
+            buffer += f"\n{role_prefix}{dialogue_turn.content}"
+        elif isinstance(dialogue_turn, tuple):
+            human = "\n\nHuman: " + dialogue_turn[0]
+            ai = "\n\nAssistant: " + dialogue_turn[1]
+            buffer += "\n" + "\n".join([human, ai])
+        else:
+            raise ValueError(
+                f"Unsupported chat history format: {type(dialogue_turn)}."
+                f" Full chat history: {chat_history} "
+            )
+    return buffer
+
+
+import ipywidgets as ipw
+from IPython.display import display, clear_output
+
+class ChatUX:
+    """ A chat UX using IPWidgets
+    """
+    def __init__(self, qa, retrievalChain = False):
+        self.qa = qa
+        self.name = None
+        self.b=None
+        self.retrievalChain = retrievalChain
+        self.out = ipw.Output()
+
+
+    def start_chat(self):
+        print("Starting chat bot")
+        display(self.out)
+        self.chat(None)
+
+
+    def chat(self, _):
+        if self.name is None:
+            prompt = ""
+        else: 
+            prompt = self.name.value
+        if 'q' == prompt or 'quit' == prompt or 'Q' == prompt:
+            print("Thank you , that was a nice chat !!")
+            return
+        elif len(prompt) > 0:
+            with self.out:
+                thinking = ipw.Label(value="Thinking...")
+                display(thinking)
+                try:
+                    if self.retrievalChain:
+                        result = self.qa.run({'question': prompt })
+                    else:
+                        result = self.qa.run({'input': prompt }) #, 'history':chat_history})
+                except:
+                    result = "No answer"
+                thinking.value=""
+                print_ww(f"AI:{result}")
+                self.name.disabled = True
+                self.b.disabled = True
+                self.name = None
+
+        if self.name is None:
+            with self.out:
+                self.name = ipw.Text(description="You:", placeholder='q to quit')
+                self.b = ipw.Button(description="Send")
+                self.b.on_click(self.chat)
+                display(ipw.Box(children=(self.name, self.b)))

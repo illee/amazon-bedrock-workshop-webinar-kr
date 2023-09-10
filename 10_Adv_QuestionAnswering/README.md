@@ -11,3 +11,5 @@
     - 신한 은행 FAQ 데이터 세트로 OpenSearch 를 통한 Q&A 입니다. OpenSearch 의 벡터 검색시에 필터 사용등을 배웁니다.
 - 03_KR_RAG_OpenSearch_Hybrid.ipynb
     - 신한 은행 FAQ 데이터 세트로 OpenSearch 를 통한 Q&A 입니다. OpenSearch 의 벡터 검색, 키워드 검색 및 하이브리드 검색을 배웁니다. 
+- 04_KR_RAG_OpenSearch_Chatbot.ipynb
+    - 신한 은행 FAQ 데이터 세트로 OpenSearch 를 통한 Conversational ChatBot 입니다.
