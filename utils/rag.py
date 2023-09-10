@@ -1,3 +1,10 @@
+############################################################    
+############################################################    
+# RAG 관련 함수들
+############################################################    
+############################################################    
+
+
 from utils import print_ww
 import pandas as pd
 
@@ -127,6 +134,10 @@ def opensearch_pretty_print_documents(response):
                 
         print('-' * 50)
     
+############################################################    
+# OpenSearch Client
+############################################################    
+    
 from typing import List, Tuple
 from opensearchpy import OpenSearch, RequestsHttpConnection
 
@@ -159,4 +170,324 @@ def delete_index(aws_client, index_name):
 
     print('\nDeleting index:')
     print(response)
+
     
+############################################################    
+# Hybrid Search
+############################################################    
+    
+    
+from itertools import chain as ch
+
+def interpolate_results(semantic, keyword, k, verbose=False):
+    '''
+    Semantic, Keyword 의 두개의 검색 셋트에서 Top K 개를 제공 함.
+    '''
+    semantic_set = set([doc.page_content for doc, score in semantic])
+    keyword_set = set([doc.page_content for doc, score in keyword])
+    common = semantic_set.intersection(keyword_set)
+
+    results = []
+    for doc, score in list(ch(semantic, keyword)):
+        # print("######## doc, score ###########")
+        # print(doc, score)
+        # print("###############################")        
+        
+        if doc.page_content in common: 
+            target = doc.page_content 
+            semantic_score = get_score(target, semantic, verbose=False)
+            keyword_score = get_score(target, keyword, verbose=False)            
+            
+            total_score = semantic_score + keyword_score
+            if verbose:
+                print("semantic_score: ", round(semantic_score,4))
+                print("keyword_score: ", round(keyword_score,4))
+                print("total_score: ", round(total_score,4))
+            
+            is_processed = is_element(target, results, verbose=False)
+            if is_processed: # 이미 중복된 것 한번 처리 했으면 스킵
+                pass
+            else:
+                results.append((doc, round(total_score,4)))
+
+        else: 
+            results.append((doc, score))
+
+    if verbose:
+        print("######## unique_set results ###########")
+        print(results)
+        print("###############################")        
+        
+    top_result = sort_score_search_results(results)
+        
+    # print("top_result: \n", top_result)        
+    
+    top_result = top_result[:k]
+    
+    return top_result
+
+def get_score(page_content, document, verbose=False):
+    '''
+    주어진 page_content 이 document 안에 있으면 해당 스코어를 제공 함.
+    '''
+    # print("######## get_scroe ###########")    
+
+    for doc, socre in document:
+        # print("document: \n", doc)        
+        if page_content == doc.page_content:
+            if verbose:
+                print("Identical: ")
+                print("document: \n", doc.page_content)                            
+                print("page_content: \n", page_content)                
+                print("socre: \n", socre)     
+            return socre
+    
+        else:
+            if verbose:
+                print("Not Identical")
+    return None
+            
+            
+def is_element(page_content, document, verbose=False):
+    '''
+    주어진 page_content 이 document 안에 있으면 True, 아니면 False
+    '''
+
+    for doc, score in document:
+        # print("document: \n", doc)        
+        if page_content == doc.page_content:
+            if verbose:
+                print("Identical: ")
+                print("document: \n", doc.page_content)                            
+                print("page_content: \n", page_content)                
+            return True
+    
+        else:
+            if verbose:
+                print("Not Identical")
+    return False
+
+    
+    
+def sort_score_search_results(search_result):
+    '''
+    '''
+    
+    df = pd.DataFrame(search_result, columns=["document","score"])
+    df = df.sort_values(by=["score"], ascending=False)
+    
+    top_result = []
+    for index, row in df.iterrows():
+        doc = row[0]
+        score = row[1]
+        doc.metadata['hybrid_socre'] = round(score,3)
+        top_result.append(doc)
+    
+    
+    return top_result
+    
+############################################################    
+# Search Function
+############################################################    
+
+def create_bool_filter(filter01, filter02):
+    boolean_filter = {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "metadata.type": f"{filter01}"
+              }
+            }
+          ],
+          "filter": {
+            "term": {
+              "metadata.source": f"{filter02}"
+            }
+          }
+        }
+    }
+    
+    return boolean_filter
+
+from langchain.chains import RetrievalQA
+
+def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose, is_filter, k):
+    if is_filter:
+        qa = RetrievalQA.from_chain_type(
+            llm=llm_text,
+            chain_type="stuff",
+            retriever=vectro_db.as_retriever(
+                        search_type="similarity", 
+                        search_kwargs={
+                                        "k": k,
+                                        "boolean_filter" : boolean_filter
+                                    }
+            ),
+
+            return_source_documents=True,
+            chain_type_kwargs={
+                                "prompt": PROMPT,
+                                "verbose": verbose,
+                              },
+            verbose=verbose
+        )
+    else:
+        qa = RetrievalQA.from_chain_type(
+            llm=llm_text,
+            chain_type="stuff",
+            retriever=vectro_db.as_retriever(
+                        search_type="similarity", 
+                        search_kwargs={
+                                        "k": k
+                                    }
+            ),
+
+            return_source_documents=True,
+            chain_type_kwargs={
+                                "prompt": PROMPT,
+                                "verbose": verbose,
+                              },
+            verbose=verbose
+        )
+        
+    result = qa(query)
+    
+    return result 
+
+from langchain.schema import Document
+
+def get_similiar_docs_with_keyword_score(query, index_name,aws_client, k=10):
+    
+    def normalize_search_formula(score, max_score):
+        return score / max_score
+
+    def normalize_search_results(search_results):
+        hits = (search_results["hits"]["hits"])
+        max_score = search_results["hits"]["max_score"]
+        for hit in hits:
+            hit["_score"] = normalize_search_formula(hit["_score"], max_score)
+        search_results["hits"]["max_score"] = hits[0]["_score"]
+        search_results["hits"]["hits"] = hits
+        return search_results
+    
+    search_query = {
+        "size": k,
+        "query": {
+            "match": {
+                "text": query
+            }
+        },
+        "_source": ["text"],
+    }    
+    search_results = aws_client.search(body=search_query, index=index_name)
+    
+    # return search_results
+    # print("###############")
+    # print("search_query: \n", search_query)    
+    # print("search_results: \n", search_results)
+    # print("###############")    
+    
+    results = []
+    if search_results["hits"]["hits"]:
+        search_results = normalize_search_results(search_results)
+        for res in search_results["hits"]["hits"]:
+            source = res["_source"]["text"].rsplit("\n", 2)[-1].split("Source: ")[-1]
+            doc = Document(
+                page_content=res["_source"]["text"],
+                metadata={'source': source, 'score': res["_score"]}
+            )
+            results.append((doc))
+
+    return results
+
+
+import copy
+from operator import itemgetter
+
+def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, k=5):    
+
+    
+    # query = f'{store}, {query}'
+    # store = "*" + store.replace("이마트", "").strip() + "*"
+    # print("query: ", query)
+    # print (query, search_type, store)
+
+    if is_filter:
+        pre_similar_doc = vectro_db.similarity_search_with_score(
+            query,
+            k=k,
+            # fetch_k=3,
+            search_type="approximate_search", # approximate_search, script_scoring, painless_scripting
+            space_type="l2",     #"l2", "l1", "linf", "cosinesimil", "innerproduct", "hammingbit";
+            boolean_filter= boolean_filter
+        )
+    else:
+        pre_similar_doc = vectro_db.similarity_search_with_score(
+            query,
+            k=k,
+            # fetch_k=3,
+            search_type="approximate_search", # approximate_search, script_scoring, painless_scripting
+            space_type="l2",     #"l2", "l1", "linf", "cosinesimil", "innerproduct", "hammingbit";
+        )
+        
+
+    
+    # print("################################")
+    # print("similar_docs: \n", similar_docs)
+    # print("################################")    
+    
+    similar_docs_copy = copy.deepcopy(pre_similar_doc)
+    
+#    print("similar_docs_copy: ", similar_docs_copy)
+    
+    # 전체 결과의 스코어에 대해서 표준화를 하여 새로운 점수를 할당 함. 시행 함.
+    if len(similar_docs_copy) != 0:
+        max_score = max(similar_docs_copy, key=itemgetter(1))[1]
+        similar_docs_copy = [(doc[0], doc[1]/max_score) for doc in similar_docs_copy]
+    
+    return similar_docs_copy
+
+
+def get_similiar_docs_with_keywords(query,aws_client, index_name, k=10):
+    
+    def normalize_search_formula(score, max_score):
+        return score / max_score
+
+    def normalize_search_results(search_results):
+        hits = (search_results["hits"]["hits"])
+        max_score = search_results["hits"]["max_score"]
+        for hit in hits:
+            hit["_score"] = normalize_search_formula(hit["_score"], max_score)
+        search_results["hits"]["max_score"] = hits[0]["_score"]
+        search_results["hits"]["hits"] = hits
+        return search_results
+    
+    search_query = {
+        "size": k,
+        "query": {
+            "match": {
+                "text": query
+            }
+        },
+        "_source": ["text"],
+    }    
+    search_results = aws_client.search(body=search_query, index=index_name)
+    # print("###############")
+    # print("search_query: \n", search_query)    
+    # print("search_results: \n", search_results)
+    # print("###############")    
+    
+    results = []
+    if search_results["hits"]["hits"]:
+        search_results = normalize_search_results(search_results)
+        for res in search_results["hits"]["hits"]:
+            source = res["_source"]["text"].rsplit("\n", 2)[-1].split("Source: ")[-1]
+            doc = Document(
+                page_content=res["_source"]["text"],
+                metadata={'source': source}
+            )
+            results.append((doc, res["_score"]))
+
+    return results
+
