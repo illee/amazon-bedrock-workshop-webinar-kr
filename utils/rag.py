@@ -558,7 +558,7 @@ class ChatUX:
                     else:
                         result = self.qa.run({'input': prompt }) #, 'history':chat_history})
                 except:
-                    result = "No answer"
+                    result = "No answer because some errors occurredr"
                 thinking.value=""
                 print_ww(f"AI:{result}")
                 self.name.disabled = True
