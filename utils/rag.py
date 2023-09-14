@@ -405,7 +405,11 @@ def get_similiar_docs_with_keyword_score(query, index_name,aws_client, k=10):
 import copy
 from operator import itemgetter
 
-def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, k=5):    
+def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, weight_decay_rate=0, k=5):    
+    '''
+    weight_decay_rate: 벡터 서치를 통해서 나온 스코어에 표준화를 한 스코어의 가중치를 낮추기 위한 값임.
+    수식은 (1 - weight_decay_rate) 임. 예를 들어서 weight_decay_rate = 0.1 이면 1 - 0.1 = 0.9 를 곱하여 기존 스코어를 감소 시킴.
+    '''
 
     
     # query = f'{store}, {query}'
@@ -442,23 +446,25 @@ def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, k=5):
 #    print("similar_docs_copy: ", similar_docs_copy)
     
     # 전체 결과의 스코어에 대해서 표준화를 하여 새로운 점수를 할당 함. 시행 함.
+    weight_decay_value =  1 - weight_decay_rate
     if len(similar_docs_copy) != 0:
         max_score = max(similar_docs_copy, key=itemgetter(1))[1]
-        similar_docs_copy = [(doc[0], doc[1]/max_score) for doc in similar_docs_copy]
+        similar_docs_copy = [(doc[0], ( doc[1] * weight_decay_value ) / max_score) for doc in similar_docs_copy]
     
     return similar_docs_copy
 
 
-def get_similiar_docs_with_keywords(query,aws_client, index_name, k=10):
+def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_rate=0, k=10):
     
-    def normalize_search_formula(score, max_score):
-        return score / max_score
+    def normalize_search_formula(score, max_score, weight_decay_rate):
+        weight_decay_value = 1 - weight_decay_rate
+        return ( score * weight_decay_value ) / max_score
 
-    def normalize_search_results(search_results):
+    def normalize_search_results(search_results, weight_decay_rate):
         hits = (search_results["hits"]["hits"])
         max_score = search_results["hits"]["max_score"]
         for hit in hits:
-            hit["_score"] = normalize_search_formula(hit["_score"], max_score)
+            hit["_score"] = normalize_search_formula(hit["_score"], max_score, weight_decay_rate)
         search_results["hits"]["max_score"] = hits[0]["_score"]
         search_results["hits"]["hits"] = hits
         return search_results
@@ -480,7 +486,7 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, k=10):
     
     results = []
     if search_results["hits"]["hits"]:
-        search_results = normalize_search_results(search_results)
+        search_results = normalize_search_results(search_results, weight_decay_rate)
         for res in search_results["hits"]["hits"]:
             source = res["_source"]["text"].rsplit("\n", 2)[-1].split("Source: ")[-1]
             doc = Document(
