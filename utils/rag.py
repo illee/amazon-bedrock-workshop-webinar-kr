@@ -355,9 +355,42 @@ def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose,
     
     return result 
 
+
+def create_keyword_bool_filter(query, filter01, filter02, k):
+    boolean_filter = {
+            "size": k,
+            "query": {
+                "bool": {
+                  "must": [
+                    {
+                      "match": {
+                        "text": query
+                      }
+                    },
+                    {
+                      "match": {
+                        "metadata.type": filter01
+                      }
+                    }
+                  ],
+                  "filter": [
+                    {
+                      "term": {
+                        "metadata.source.keyword": filter02
+                      }
+                    }
+                  ]
+                }
+            }            
+        }   
+    
+    return boolean_filter
+
+
+
 from langchain.schema import Document
 
-def get_similiar_docs_with_keyword_score(query, index_name,aws_client, k=10):
+def get_similiar_docs_with_keyword_score(query, index_name,aws_client,is_filter, filter01=None, filter02=None, k=10):
     
     def normalize_search_formula(score, max_score):
         return score / max_score
@@ -370,16 +403,21 @@ def get_similiar_docs_with_keyword_score(query, index_name,aws_client, k=10):
         search_results["hits"]["max_score"] = hits[0]["_score"]
         search_results["hits"]["hits"] = hits
         return search_results
-    
-    search_query = {
-        "size": k,
-        "query": {
-            "match": {
-                "text": query
-            }
-        },
-        "_source": ["text"],
-    }    
+
+    if is_filter:
+        search_query = create_keyword_bool_filter(query, filter01, filter02, k)
+        
+        # print("search_query: \n", search_query)
+    else:
+        search_query = {
+            "size": k,
+            "query": {
+                "match": {
+                    "text": query
+                }
+            },
+            "_source": ["text"],
+        }    
     search_results = aws_client.search(body=search_query, index=index_name)
     
     # return search_results
@@ -454,7 +492,7 @@ def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, weight_decay_
     return similar_docs_copy
 
 
-def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_rate=0, k=10):
+def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_rate=0, is_filter=True, filter01=None, filter02=None, k=10):
     
     def normalize_search_formula(score, max_score, weight_decay_rate):
         weight_decay_value = 1 - weight_decay_rate
@@ -469,15 +507,20 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_r
         search_results["hits"]["hits"] = hits
         return search_results
     
-    search_query = {
-        "size": k,
-        "query": {
-            "match": {
-                "text": query
-            }
-        },
-        "_source": ["text"],
-    }    
+    if is_filter:
+        search_query = create_keyword_bool_filter(query, filter01, filter02, k)
+        
+        # print("search_query: \n", search_query)
+    else:
+        search_query = {
+            "size": k,
+            "query": {
+                "match": {
+                    "text": query
+                }
+            },
+            "_source": ["text"],
+        }    
     search_results = aws_client.search(body=search_query, index=index_name)
     # print("###############")
     # print("search_query: \n", search_query)    
