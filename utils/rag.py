@@ -47,6 +47,7 @@ def show_chunk_stat(documents):
 
 from langchain.embeddings import SagemakerEndpointEmbeddings
 from langchain.embeddings.sagemaker_endpoint import EmbeddingsContentHandler
+from langchain.retrievers import AmazonKendraRetriever
 from typing import Any, Dict, List, Optional
 import json
 import numpy as np
@@ -353,6 +354,37 @@ def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose,
         
     result = qa(query)
     
+    return result 
+
+
+def run_RetrievalQA_kendra(query, llm_text, PROMPT, kendra_index_id, k, aws_region, verbose):
+    
+    qa = RetrievalQA.from_chain_type(
+        llm=llm_text,
+        chain_type="stuff",
+        retriever=AmazonKendraRetriever(
+            index_id=kendra_index_id,
+            region_name=aws_region,
+            top_k=k,
+            attribute_filter = {
+                "EqualsTo": {      
+                    "Key": "_language_code",
+                    "Value": {
+                        "StringValue": "ko"
+                    }
+                },
+            }
+        ),
+        return_source_documents=True,
+        chain_type_kwargs={
+            "prompt": PROMPT,
+            "verbose": verbose,
+        },
+        verbose=verbose
+    )
+    
+    result = qa(query)
+
     return result 
 
 

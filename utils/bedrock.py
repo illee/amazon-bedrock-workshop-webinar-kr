@@ -39,6 +39,7 @@ def get_bedrock_client(
     client_kwargs = {**session_kwargs}
 
     profile_name = os.environ.get("AWS_PROFILE")
+    print(f"  Using profile: {profile_name}")
     if profile_name:
         print(f"  Using profile: {profile_name}")
         session_kwargs["profile_name"] = profile_name
