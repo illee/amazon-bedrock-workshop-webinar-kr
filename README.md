@@ -96,3 +96,8 @@ cd amazon-bedrock-workshop-webinar-kr
 - [RAG with Opensearch_Chatbot](./10_Adv_QuestionAnswering/04_KR_RAG_OpenSearch_Chatbot.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG기반 챗봇 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Chatbot_Agent](./10_Adv_QuestionAnswering/05_KR_RAG_OpenSearch_Chatbot_Agent.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG 및 langchain Agent기반 챗봇 구성 방법을 보여줍니다.
 - [RAG with Kendra](./10_Adv_QuestionAnswering/01_KR_RAG_Kendra.ipynb): 이 노트북은 Amazon Kendra기반 RAG 구성 방법을 보여줍니다.
+
+### Applications
+- Post Call Analytics
+    - [PCA with Cladue](./20_Applications/01_post-call-analytics-ko.ipynb): 이 노트북은 사후통화분석 기능으로, 통화요약을 비롯하여 통화목적, 고객감정, 상담사대응을 분석하는 예시를 담고 있으며, 긴 통화 분석기법도 다루고 있습니다.
+    - [PCA with Quenstion and Answering](./20_Applications/01_post-call-analytics-stt-ko.ipynb): 이 노트북은 사후통화분석 기능으로, 통화요약 및 통화내용 질의 및 음성단서 제공 예시를 담도 있습니다. 
