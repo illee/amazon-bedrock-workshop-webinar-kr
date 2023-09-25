@@ -13,6 +13,9 @@ Amazon Bedrock은 타사 제공업체 및 Amazon의 FM에 대한 액세스를 �
 - **Questions Answering** \[Estimated time to complete - 45 mins\]  
 - **Chatbot** \[Estimated time to complete - 45 mins\]
 - **Image Generation** \[Estimated time to complete - 30 mins\]
+- **Advanced Questions Answering** \[Estimated time to complete - 60 mins\]
+- **Applications** \[Estimated time to complete - 30 mins\]
+    - Post Call Analytics \[Estimated time to complete - 30 mins\]
 
 <div align="center">
 
@@ -35,33 +38,6 @@ Amazon Bedrock은 타사 제공업체 및 Amazon의 FM에 대한 액세스를 �
 
 - 기존(로컬 또는 기타) 노트북 환경을 사용하시려면 [AWS 호출을 위한 자격 증명](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html)이 있는지 확인하세요.
 
-### 베드락에 대한 AWS IAM 권한 활성화
-
-노트북 환경에서 가정하는 AWS ID(SageMaker의 [*스튜디오/노트북 실행 역할*](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-roles.html)이거나 자체 관리 노트북의 역할 또는 IAM 사용자일 수 있음)는 Amazon 베드락 서비스를 호출할 수 있는 충분한 [AWS IAM 권한](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html)을 가지고 있어야 합니다.
-
-유저의 ID에 대한 접근 권한을 부여하려면 다음과 같이 하세요:
-
-- [AWS IAM 콘솔](https://us-east-1.console.aws.amazon.com/iam/home?#)을 엽니다.
-- [역할](https://us-east-1.console.aws.amazon.com/iamv2/home?#/roles)(세이지메이커를 사용 중이거나 IAM 역할을 맡고 있는 경우) 또는 [사용자](https://us-east-1.console.aws.amazon.com/iamv2/home?#/users)를 찾습니다.
-- 권한 추가 > 인라인 정책 만들기*를 선택하여 새 인라인 권한을 첨부하고, *JSON* 편집기를 열어 아래 예제 정책에 붙여넣습니다:
-
-```
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Sid": "BedrockFullAccess",
-            "Effect": "Allow",
-            "Action": ["bedrock:*"],
-            "Resource": "*"
-        }
-    ]
-}
-```
->⚠️ **참고:** Amazon SageMaker를 사용하면 노트북 실행 역할은 일반적으로 AWS 콘솔에 로그인하는 사용자 또는 역할과 *별개*로 설정됩니다. Amazon 베드락용 AWS 콘솔을 탐색하려면 콘솔 사용자/역할에도 권한을 부여해야 합니다.
-
-베드락의 세분화된 작업 및 리소스 권한에 대한 자세한 내용은 베드락 개발자 가이드를 확인하세요.
-
 ### Clone and use the notebooks
 
 > ℹ️ **참고: 세이지메이커 스튜디오에서 *파일 > 새로 만들기 > 터미널*을 클릭하여 "시스템 터미널"을 열어 이러한 명령을 실행할 수 있습니다.
@@ -73,15 +49,12 @@ git clone https://github.com/dongjin-ml/amazon-bedrock-workshop-webinar-kr.git
 cd amazon-bedrock-workshop-webinar-kr
 ```
 
-이 서비스는 프리뷰 버전이기 때문에 Amazon Bedrock SDK는 아직 [파이썬용 AWS SDK - boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)의 표준 릴리스에 포함되어 있지 않습니다. 다음 스크립트를 실행하여 베드락 테스트를 위한 사용자 정의 SDK 휠을 다운로드하고 추출하세요:
+### 환경설정
+- 00_Setup/setup.ipynb의 가이드를 따르세요.
 
-```sh
-bash ./download-dependencies.sh
-```
+베드락의 세분화된 작업 및 리소스 권한에 대한 자세한 내용은 베드락 개발자 가이드를 확인하세요.
 
-이 스크립트는 'dependencies' 폴더를 생성하고 관련 SDK를 다운로드하지만 아직 'pip install'는 하지 않습니다.
-
-이제 실습용 노트북을 탐색할 준비가 되었습니다! 00_Intro/bedrock_boto3_setup.ipynb](00_Intro/bedrock_boto3_setup.ipynb)부터 시작하여 Bedrock SDK를 설치하고, 클라이언트를 생성하고, Python에서 API 호출을 시작하는 방법에 대한 자세한 내용을 확인하세요.
+이 서비스는 프리뷰 버전이기 때문에 Amazon Bedrock SDK는 아직 [파이썬용 AWS SDK - boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)의 표준 릴리스에 포함되어 있지 않습니다.
 
 ## Content
 
@@ -114,3 +87,12 @@ bash ./download-dependencies.sh
 ### Text to Image
 
 - [Image Generation with Stable Diffusion](./05_Image/Bedrock%20Stable%20Diffusion%20XL.ipynb): 이 노트북은 안정적인 확산 모델을 사용하여 이미지를 생성하는 방법을 보여줍니다.
+
+### Advanced Questions Answering
+
+- [RAG with FAISS](./10_Adv_QuestionAnswering/01_KR_RAG_FAISS_Claude.ipynb): 이 노트북은 FAISS(VectorDB)기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch](./10_Adv_QuestionAnswering/02_KR_RAG_OpenSearch_Claude.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Hybrid](./10_Adv_QuestionAnswering/03_KR_RAG_OpenSearch_Hybrid.ipynb): 이 노트북은 OpenSearch(VectorDB) Hybrid(Semantic + Keyword) 서치 기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Chatbot](./10_Adv_QuestionAnswering/04_KR_RAG_OpenSearch_Chatbot.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG기반 챗봇 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Chatbot_Agent](./10_Adv_QuestionAnswering/05_KR_RAG_OpenSearch_Chatbot_Agent.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG 및 langchain Agent기반 챗봇 구성 방법을 보여줍니다.
+- [RAG with Kendra](./10_Adv_QuestionAnswering/01_KR_RAG_Kendra.ipynb): 이 노트북은 Amazon Kendra기반 RAG 구성 방법을 보여줍니다.
