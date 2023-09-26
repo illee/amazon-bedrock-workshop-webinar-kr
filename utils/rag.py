@@ -156,6 +156,15 @@ def create_aws_opensearch_client(region: str, host: str, http_auth: Tuple[str, s
     
     return aws_client
 
+def create_index(aws_client, index_name, index_body):    
+    '''
+    인덱스 생성
+    '''
+    response = aws_client.indices.create(index_name, body=index_body)
+    print('\nCreating index:')
+    print(response)
+
+    
 def check_if_index_exists(aws_client, index_name):
     '''
     인덱스가 존재하는지 확인
@@ -163,6 +172,31 @@ def check_if_index_exists(aws_client, index_name):
     exists = aws_client.indices.exists(index_name)
     print(f"index_name={index_name}, exists={exists}")
     return exists
+
+
+def add_doc(aws_client, index_name, document, id):
+    '''
+    # Add a document to the index.
+    '''
+    response = aws_client.index(
+        index = index_name,
+        body = document,
+        id = id,
+        refresh = True
+    )
+
+    print('\nAdding document:')
+    print(response)
+
+def search_document(aws_client, query, index_name):
+    response = aws_client.search(
+        body = query,
+        index = index_name
+    )
+    print('\nSearch results:')
+    # print(response)
+    return response
+    
 
 def delete_index(aws_client, index_name):
     response = aws_client.indices.delete(
