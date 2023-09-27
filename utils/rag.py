@@ -160,7 +160,10 @@ def create_index(aws_client, index_name, index_body):
     '''
     인덱스 생성
     '''
-    response = aws_client.indices.create(index_name, body=index_body)
+    response = aws_client.indices.create(
+        index_name,
+        body=index_body
+    )
     print('\nCreating index:')
     print(response)
 
