@@ -69,7 +69,7 @@ def get_bedrock_client(
         client_kwargs["endpoint_url"] = endpoint_url
 
     bedrock_client = session.client(
-        service_name="bedrock",
+        service_name="bedrock-runtime",
         config=retry_config,
         **client_kwargs
     )
