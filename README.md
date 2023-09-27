@@ -92,6 +92,8 @@ cd amazon-bedrock-workshop-webinar-kr
 
 - [RAG with FAISS](./10_Adv_QuestionAnswering/01_KR_RAG_FAISS_Claude.ipynb): 이 노트북은 FAISS(VectorDB)기반 RAG 구성 방법을 보여줍니다.
 - [RAG with Opensearch](./10_Adv_QuestionAnswering/02_KR_RAG_OpenSearch_Claude.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Keyword_Search](./10_Adv_QuestionAnswering/02_1_KR_RAG_OpenSearch_Keyword.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Semantic_Search](./10_Adv_QuestionAnswering/02_2_KR_RAG_OpenSearch_Semantic.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Hybrid](./10_Adv_QuestionAnswering/03_KR_RAG_OpenSearch_Hybrid.ipynb): 이 노트북은 OpenSearch(VectorDB) Hybrid(Semantic + Keyword) 서치 기반 RAG 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Chatbot](./10_Adv_QuestionAnswering/04_KR_RAG_OpenSearch_Chatbot.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG기반 챗봇 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Chatbot_Agent](./10_Adv_QuestionAnswering/05_KR_RAG_OpenSearch_Chatbot_Agent.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG 및 langchain Agent기반 챗봇 구성 방법을 보여줍니다.
