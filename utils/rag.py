@@ -135,6 +135,56 @@ def opensearch_pretty_print_documents(response):
                 
         print('-' * 50)
     
+def opensearch_pretty_print_documents_wo_filter(response):
+    '''
+    OpenSearch 결과인 LIST 를 파싱하는 함수
+    '''
+    for doc, score in response:
+        print(f'\nScore: {score}')
+        print(f'Document Number: {doc.metadata["row"]}')
+
+        # Split the page content into lines
+        lines = doc.page_content.split("\n")
+
+        # Extract and print each piece of information if it exists
+        for line in lines:
+            split_line = line.split(": ")
+            if len(split_line) > 1:
+                print(f'{split_line[0]}: {split_line[1]}')
+                
+        print('-' * 50)
+
+    
+def get_embedding_model(boto3_bedrock, is_bedrock_embeddings, is_KoSimCSERobert, aws_region, endpont_name=None):
+    '''
+    Bedrock embeeding model or KoSimCSERobert model 가져오기
+    '''
+    if is_bedrock_embeddings:
+
+        # We will be using the Titan Embeddings Model to generate our Embeddings.
+        from langchain.embeddings import BedrockEmbeddings
+        # llm_emb = BedrockEmbeddings(client=boto3_bedrock)
+        llm_emb = BedrockEmbeddings(
+          client=boto3_bedrock,
+          model_id = "amazon.titan-embed-g1-text-02" # amazon.titan-e1t-medium, amazon.titan-embed-g1-text-02
+        )        
+        print("Bedrock Embeddings Model Loaded")
+    elif is_KoSimCSERobert:
+        LLMEmbHandler = KoSimCSERobertaContentHandler()
+        endpoint_name_emb = endpont_name
+        llm_emb = SagemakerEndpointEmbeddingsJumpStart(
+            endpoint_name=endpoint_name_emb,
+            region_name=aws_region,
+            content_handler=LLMEmbHandler,
+        )        
+        print("KoSimCSERobert Embeddings Model Loaded")
+    else:
+        llm_emb = None
+        print("No Embedding Model Selected")
+    
+    return llm_emb
+
+    
 ############################################################    
 # OpenSearch Client
 ############################################################    
@@ -209,6 +259,52 @@ def delete_index(aws_client, index_name):
     print('\nDeleting index:')
     print(response)
 
+
+
+def generate_opensearch_AndQuery(question):
+    '''
+    주어진 앱력을 키워드로 분리하고 AND 조건으로 바꾸어 주는 쿼리 생성
+    '''
+    keywords = question.split(' ')
+    query = {
+        "query": {
+            "bool": {
+                "must": []
+            }
+        }
+    }
+    
+    for keyword in keywords:
+        query["query"]["bool"]["must"].append({
+            "match": {
+                "text": keyword
+            }
+        })
+    
+    # return query
+    return json.dumps(query, indent=2, ensure_ascii=False)
+
+
+def parse_keyword_response(response, show_size=3):
+    '''
+    키워드 검색 결과를 보여 줌.
+    '''
+    length = len(response['hits']['hits'])
+    if length >= 1:
+        print("# of searched docs: ", length)
+        print(f"# of display: {show_size}")        
+        print("---------------------")        
+        for idx, doc in enumerate(response['hits']['hits']):
+            print("_id in index: " , doc['_id'])            
+            print(doc['_score'])            
+            print(doc['_source']['text'])
+            print("---------------------")
+            if idx == show_size-1:
+                break
+    else:
+        print("There is no response")
+
+    
     
 ############################################################    
 # Hybrid Search
