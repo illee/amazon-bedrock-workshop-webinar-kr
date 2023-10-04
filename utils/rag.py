@@ -7,6 +7,18 @@
 
 from utils import print_ww
 import pandas as pd
+import pickle
+
+def to_pickle(data, path):
+    
+    with open(path, "wb") as f:
+        pickle.dump(data, f, pickle.HIGHEST_PROTOCOL)
+        
+def load_pickle(path):
+    
+    with open(path, "rb") as f:
+        data = pickle.load(f)
+        
 
 def show_context_used(context_list, limit=10):
     for idx, context in enumerate(context_list):
@@ -325,75 +337,70 @@ def interpolate_results(semantic, keyword, k, verbose=False):
     for doc, score in list(ch(semantic, keyword)):
         # print("######## doc, score ###########")
         # print(doc, score)
-        # print("###############################")        
+        # print("###############################")
         
-        if doc.page_content in common: 
-            target = doc.page_content 
+        if doc.page_content in common:
+            
+            target = doc.page_content
             semantic_score = get_score(target, semantic, verbose=False)
-            keyword_score = get_score(target, keyword, verbose=False)            
+            keyword_score = get_score(target, keyword, verbose=False)
             
             total_score = semantic_score + keyword_score
-            if verbose:
-                print("semantic_score: ", round(semantic_score,4))
-                print("keyword_score: ", round(keyword_score,4))
-                print("total_score: ", round(total_score,4))
             
-            is_processed = is_element(target, results, verbose=False)
-            if is_processed: # 이미 중복된 것 한번 처리 했으면 스킵
-                pass
-            else:
-                results.append((doc, round(total_score,4)))
+            if verbose:
+                print("semantic_score: ", round(semantic_score, 4))
+                print("keyword_score: ", round(keyword_score, 4))
+                print("total_score: ", round(total_score, 4))
 
-        else: 
+            is_processed = is_element(target, results, verbose=False)
+            if is_processed: pass # 이미 중복된 것 한번 처리 했으면 스킵
+            else: results.append((doc, round(total_score,4)))
+        else:
             results.append((doc, score))
 
     if verbose:
         print("######## unique_set results ###########")
         print(results)
-        print("###############################")        
-        
+        print("###############################")
+
     top_result = sort_score_search_results(results)
-        
-    # print("top_result: \n", top_result)        
-    
+    # print("top_result: \n", top_result)
     top_result = top_result[:k]
-    
+
     return top_result
 
 def get_score(page_content, document, verbose=False):
     '''
     주어진 page_content 이 document 안에 있으면 해당 스코어를 제공 함.
     '''
-    # print("######## get_scroe ###########")    
+    # print("######## get_scroe ###########")
 
     for doc, socre in document:
-        # print("document: \n", doc)        
+        # print("document: \n", doc)
         if page_content == doc.page_content:
             if verbose:
                 print("Identical: ")
-                print("document: \n", doc.page_content)                            
-                print("page_content: \n", page_content)                
-                print("socre: \n", socre)     
+                print("document: \n", doc.page_content)
+                print("page_content: \n", page_content)
+                print("socre: \n", socre)
             return socre
-    
         else:
             if verbose:
                 print("Not Identical")
     return None
-            
-            
+
 def is_element(page_content, document, verbose=False):
     '''
     주어진 page_content 이 document 안에 있으면 True, 아니면 False
     '''
 
     for doc, score in document:
-        # print("document: \n", doc)        
+        # print("document: \n", doc)
         if page_content == doc.page_content:
             if verbose:
                 print("Identical: ")
-                print("document: \n", doc.page_content)                            
-                print("page_content: \n", page_content)                
+                print("document: \n", doc.page_content)
+                print("page_content: \n", page_content)
             return True
     
         else:
@@ -401,25 +408,20 @@ def is_element(page_content, document, verbose=False):
                 print("Not Identical")
     return False
 
-    
-    
 def sort_score_search_results(search_result):
-    '''
-    '''
-    
+
     df = pd.DataFrame(search_result, columns=["document","score"])
     df = df.sort_values(by=["score"], ascending=False)
-    
+
     top_result = []
     for index, row in df.iterrows():
         doc = row[0]
         score = row[1]
         doc.metadata['hybrid_socre'] = round(score,3)
         top_result.append(doc)
-    
-    
+
     return top_result
-    
+
 ############################################################    
 # Search Function
 ############################################################    
@@ -447,51 +449,50 @@ def create_bool_filter(filter01, filter02):
 from langchain.chains import RetrievalQA
 
 def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose, is_filter, k):
+    
     if is_filter:
         qa = RetrievalQA.from_chain_type(
             llm=llm_text,
             chain_type="stuff",
             retriever=vectro_db.as_retriever(
-                        search_type="similarity", 
-                        search_kwargs={
-                                        "k": k,
-                                        "boolean_filter" : boolean_filter
-                                    }
+                search_type="similarity",
+                search_kwargs={
+                    "k":k,
+                    "boolean_filter":boolean_filter
+                }
             ),
-
             return_source_documents=True,
             chain_type_kwargs={
-                                "prompt": PROMPT,
-                                "verbose": verbose,
-                              },
+                "prompt":PROMPT,
+                "verbose":verbose,
+            },
             verbose=verbose
         )
+        
     else:
         qa = RetrievalQA.from_chain_type(
             llm=llm_text,
             chain_type="stuff",
             retriever=vectro_db.as_retriever(
-                        search_type="similarity", 
-                        search_kwargs={
-                                        "k": k
-                                    }
+                search_type="similarity",
+                search_kwargs={
+                    "k":k
+                }
             ),
-
             return_source_documents=True,
             chain_type_kwargs={
-                                "prompt": PROMPT,
-                                "verbose": verbose,
-                              },
+                "prompt": PROMPT,
+                "verbose": verbose,
+            },
             verbose=verbose
         )
-        
+
     result = qa(query)
-    
-    return result 
+
+    return result
 
 
 def run_RetrievalQA_kendra(query, llm_text, PROMPT, kendra_index_id, k, aws_region, verbose):
-    
     qa = RetrievalQA.from_chain_type(
         llm=llm_text,
         chain_type="stuff",
@@ -555,7 +556,7 @@ def create_keyword_bool_filter(query, filter01, filter02, k):
 
 from langchain.schema import Document
 
-def get_similiar_docs_with_keyword_score(query, index_name,aws_client,is_filter, filter01=None, filter02=None, k=10):
+def get_similiar_docs_with_keyword_score(query, index_name, aws_client,is_filter, filter01=None, filter02=None, k=10):
     
     def normalize_search_formula(score, max_score):
         return score / max_score
@@ -569,10 +570,7 @@ def get_similiar_docs_with_keyword_score(query, index_name,aws_client,is_filter,
         search_results["hits"]["hits"] = hits
         return search_results
 
-    if is_filter:
-        search_query = create_keyword_bool_filter(query, filter01, filter02, k)
-        
-        # print("search_query: \n", search_query)
+    if is_filter: search_query = create_keyword_bool_filter(query, filter01, filter02, k)
     else:
         search_query = {
             "size": k,
@@ -582,15 +580,19 @@ def get_similiar_docs_with_keyword_score(query, index_name,aws_client,is_filter,
                 }
             },
             "_source": ["text"],
-        }    
-    search_results = aws_client.search(body=search_query, index=index_name)
+        }
+    
+    search_results = aws_client.search(
+        body=search_query,
+        index=index_name
+    )
     
     # return search_results
-    # print("###############")
-    # print("search_query: \n", search_query)    
-    # print("search_results: \n", search_results)
-    # print("###############")    
-    
+    #print("###############")
+    # print("search_query: \n", search_query)
+    #print("search_results: \n", search_results)
+    #print("###############")
+
     results = []
     if search_results["hits"]["hits"]:
         search_results = normalize_search_results(search_results)
@@ -613,8 +615,6 @@ def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, weight_decay_
     weight_decay_rate: 벡터 서치를 통해서 나온 스코어에 표준화를 한 스코어의 가중치를 낮추기 위한 값임.
     수식은 (1 - weight_decay_rate) 임. 예를 들어서 weight_decay_rate = 0.1 이면 1 - 0.1 = 0.9 를 곱하여 기존 스코어를 감소 시킴.
     '''
-
-    
     # query = f'{store}, {query}'
     # store = "*" + store.replace("이마트", "").strip() + "*"
     # print("query: ", query)
@@ -653,12 +653,11 @@ def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, weight_decay_
     if len(similar_docs_copy) != 0:
         max_score = max(similar_docs_copy, key=itemgetter(1))[1]
         similar_docs_copy = [(doc[0], ( doc[1] * weight_decay_value ) / max_score) for doc in similar_docs_copy]
-    
+        
     return similar_docs_copy
 
+def get_similiar_docs_with_keywords(query, aws_client, index_name, weight_decay_rate=0, is_filter=True, filter01=None, filter02=None, k=10):
 
-def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_rate=0, is_filter=True, filter01=None, filter02=None, k=10):
-    
     def normalize_search_formula(score, max_score, weight_decay_rate):
         weight_decay_value = 1 - weight_decay_rate
         return ( score * weight_decay_value ) / max_score
@@ -671,11 +670,11 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_r
         search_results["hits"]["max_score"] = hits[0]["_score"]
         search_results["hits"]["hits"] = hits
         return search_results
-    
+
     if is_filter:
         search_query = create_keyword_bool_filter(query, filter01, filter02, k)
-        
         # print("search_query: \n", search_query)
+        
     else:
         search_query = {
             "size": k,
@@ -685,7 +684,8 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_r
                 }
             },
             "_source": ["text"],
-        }    
+        }
+    
     search_results = aws_client.search(body=search_query, index=index_name)
     # print("###############")
     # print("search_query: \n", search_query)    
@@ -704,6 +704,96 @@ def get_similiar_docs_with_keywords(query,aws_client, index_name, weight_decay_r
             results.append((doc, res["_score"]))
 
     return results
+
+from langchain.schema import BaseRetriever
+from langchain.callbacks.manager import CallbackManagerForRetrieverRun
+
+class BM25OpenSearchRetriever(BaseRetriever):
+    
+    client: Any
+    index_name: str
+    is_filter: bool
+    filter01: str
+    filter02: str
+    k: int
+            
+    def create_keyword_bool_filter(self, query, filter01, filter02, k):
+        
+        boolean_filter = {
+                "size": k,
+                "query": {
+                    "bool": {
+                      "must": [
+                        {
+                          "match": {
+                            "text": query
+                          }
+                        },
+                        {
+                          "match": {
+                            "metadata.type": filter01
+                          }
+                        }
+                      ],
+                      "filter": [
+                        {
+                          "term": {
+                            "metadata.source.keyword": filter02
+                          }
+                        }
+                      ]
+                    }
+                }            
+            }   
+
+        return boolean_filter
+
+    def normalize_search_formula(self, score, max_score):
+        return score / max_score
+
+    def normalize_search_results(self, search_results):
+        hits = (search_results["hits"]["hits"])
+        max_score = search_results["hits"]["max_score"]
+        for hit in hits:
+            hit["_score"] = self.normalize_search_formula(hit["_score"], max_score)
+        search_results["hits"]["max_score"] = hits[0]["_score"]
+        search_results["hits"]["hits"] = hits
+        return search_results
+    
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: CallbackManagerForRetrieverRun) -> List[Document]:
+        
+        if self.is_filter: search_query = self.create_keyword_bool_filter(query, self.filter01, self.filter02, self.k)
+        else:
+            search_query = {
+                "size": k,
+                "query": {
+                    "match": {
+                        "text": query
+                    }
+                },
+                "_source": ["text"],
+            }
+            
+        search_results = self.client.search(
+            body=search_query,
+            index=self.index_name
+        )
+        
+        results = []
+        if search_results["hits"]["hits"]:
+            search_results = self.normalize_search_results(search_results)
+            for res in search_results["hits"]["hits"]:
+                source = res["_source"]["text"].rsplit("\n", 2)[-1].split("Source: ")[-1]
+                doc = Document(
+                    page_content=res["_source"]["text"],
+                    metadata={'source': source, 'score': res["_score"]}
+                )
+                results.append((doc))
+                
+        
+        return results
+
 
 ###########################################    
 ### Chatbot Functions
