@@ -9,7 +9,6 @@ from typing import Optional
 import boto3
 from botocore.config import Config
 
-
 def get_bedrock_client(
     assumed_role: Optional[str] = None,
     endpoint_url: Optional[str] = None,
@@ -77,3 +76,29 @@ def get_bedrock_client(
     print("boto3 Bedrock client successfully created!")
     print(bedrock_client._endpoint)
     return bedrock_client
+
+
+class bedrock_info():
+
+    _BEDROCK_MODEL_INFO = {
+        "Claude-Instant-V1": "anthropic.claude-instant-v1",
+        "Claude-V1": "anthropic.claude-v1",
+        "Claude-V2": "anthropic.claude-v2",
+        "Jurassic-2-Mid": "ai21.j2-mid-v1",
+        "Jurassic-2-Ultra": "ai21.j2-ultra-v1",
+        "Command": "cohere.command-text-v14",
+        "Titan-Embeddings-G1": "amazon.titan-embed-text-v1",
+        "Titan-Text-G1": "TBD"
+    }
+
+    @classmethod
+    def get_list_fm_models(cls, ):
+        
+        return cls._BEDROCK_MODEL_INFO
+
+    @classmethod
+    def get_model_id(cls, model_name):
+
+        assert model_name in cls._BEDROCK_MODEL_INFO.keys(), "Check model name"
+
+        return cls._BEDROCK_MODEL_INFO[model_name]

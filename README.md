@@ -28,6 +28,8 @@ Amazon Bedrock은 타사 제공업체 및 Amazon의 FM에 대한 액세스를 �
 
 ## 시작하기
 
+[step-by-step video tutorial 시청하기](https://www.youtube.com/watch?v=ab1mbj0acDo)
+
 ### 노트북 환경 선택
 
 이 워크샵은 원하는 환경에서 실행할 수 있는 일련의 **Python 노트북**으로 제공됩니다:
@@ -94,7 +96,8 @@ cd amazon-bedrock-workshop-webinar-kr
 - [RAG with Opensearch](./10_Adv_QuestionAnswering/02_KR_RAG_OpenSearch_Claude.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Keyword_Search](./10_Adv_QuestionAnswering/02_1_KR_RAG_OpenSearch_Keyword.ipynb): 이 노트북은 OpenSearch(VectorDB) Keyword 서치 기반 RAG 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Semantic_Search](./10_Adv_QuestionAnswering/02_2_KR_RAG_OpenSearch_Semantic.ipynb): 이 노트북은 OpenSearch(VectorDB) Semantic 서치 기반 RAG 구성 방법을 보여줍니다.
-- [RAG with Opensearch_Hybrid](./10_Adv_QuestionAnswering/03_KR_RAG_OpenSearch_Hybrid.ipynb): 이 노트북은 OpenSearch(VectorDB) Hybrid(Semantic + Keyword) 서치 기반 RAG 구성 방법을 보여줍니다.
+- [RAG with Opensearch_Hybrid](./10_Adv_QuestionAnswering/03_1_KR_RAG_OpenSearch_Hybrid.ipynb): 이 노트북은 OpenSearch(VectorDB) Hybrid(Semantic + Keyword) 서치 기반 RAG 구성 방법을 보여줍니다. 검색 결과 fusion을 위해 Custom function을 사용합니다.
+- [RAG with Opensearch_Hybrid_EnsembleRetriever](./10_Adv_QuestionAnswering/03_2_KR_RAG_OpenSearch_Hybrid-EnsembleRetriever.ipynb): 이 노트북은 OpenSearch(VectorDB) Hybrid(Semantic + Keyword) 서치 기반 RAG 구성 방법을 보여줍니다. 검색 결과 fusion을 위해 Langchain에서 제공하는 Ensemble retriever를 사용합니다.
 - [RAG with Opensearch_Chatbot](./10_Adv_QuestionAnswering/04_KR_RAG_OpenSearch_Chatbot.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG기반 챗봇 구성 방법을 보여줍니다.
 - [RAG with Opensearch_Chatbot_Agent](./10_Adv_QuestionAnswering/05_KR_RAG_OpenSearch_Chatbot_Agent.ipynb): 이 노트북은 OpenSearch(VectorDB) RAG 및 langchain Agent기반 챗봇 구성 방법을 보여줍니다.
 - [RAG with Kendra](./10_Adv_QuestionAnswering/01_KR_RAG_Kendra.ipynb): 이 노트북은 Amazon Kendra기반 RAG 구성 방법을 보여줍니다.
