@@ -28,8 +28,6 @@ Amazon Bedrock은 타사 제공업체 및 Amazon의 FM에 대한 액세스를 �
 
 ## 시작하기
 
-[step-by-step video tutorial 시청하기](https://www.youtube.com/watch?v=ab1mbj0acDo)
-
 ### 노트북 환경 선택
 
 이 워크샵은 원하는 환경에서 실행할 수 있는 일련의 **Python 노트북**으로 제공됩니다:
@@ -56,7 +54,8 @@ cd amazon-bedrock-workshop-webinar-kr
 
 베드락의 세분화된 작업 및 리소스 권한에 대한 자세한 내용은 베드락 개발자 가이드를 확인하세요.
 
-이 서비스는 프리뷰 버전이기 때문에 Amazon Bedrock SDK는 아직 [파이썬용 AWS SDK - boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html)의 표준 릴리스에 포함되어 있지 않습니다.
+### Quick tutorial
+[step-by-step video tutorial 시청하기](https://www.youtube.com/watch?v=ab1mbj0acDo)
 
 ## Content
 
