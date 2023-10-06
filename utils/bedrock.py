@@ -93,7 +93,7 @@ class bedrock_info():
 
     @classmethod
     def get_list_fm_models(cls, ):
-        
+
         return cls._BEDROCK_MODEL_INFO
 
     @classmethod
