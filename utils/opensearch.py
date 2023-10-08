@@ -65,7 +65,7 @@ class opensearch_utils():
             body=query,
             index=index_name
         )
-        print('\nSearch results:')
+        #print('\nKeyword Search results:')
         return response
 
     @classmethod
@@ -166,7 +166,7 @@ class opensearch_utils():
             QUERY_TEMPLATE["query"]["bool"]["filter"].extend(kwargs["filter"])
 
         return QUERY_TEMPLATE
-    
+
     @classmethod
     def get_filter(cls, **kwargs):
 

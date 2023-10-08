@@ -321,9 +321,52 @@ def parse_keyword_response(response, show_size=3):
 ############################################################    
 # Hybrid Search
 ############################################################    
-    
-    
+
+
 from itertools import chain as ch
+from typing import Any, Dict, List
+from langchain.schema import Document
+
+def ensemble_results(doc_lists: List[List[Document]], weights, algorithm="RRF", c=60, k=5) -> List[Document]:
+
+    assert algorithm in ["RRF", "simple_weighted"]
+
+    # Create a union of all unique documents in the input doc_lists
+    all_documents = set()
+
+    for doc_list in doc_lists:
+        for (doc, _) in doc_list:
+            all_documents.add(doc.page_content)
+
+    # Initialize the score dictionary for each document
+    hybrid_score_dic = {doc: 0.0 for doc in all_documents}
+
+    # Calculate RRF scores for each document
+    for doc_list, weight in zip(doc_lists, weights):
+        for rank, (doc, score) in enumerate(doc_list, start=1):
+            if algorithm == "RRF": # RRF (Reciprocal Rank Fusion)
+                score = weight * (1 / (rank + c))
+            elif algorithm == "simple_weighted":
+                score *= weight
+            hybrid_score_dic[doc.page_content] += score
+
+    # Sort documents by their scores in descending order
+    sorted_documents = sorted(
+        hybrid_score_dic.items(), key=lambda x: x[1], reverse=True
+    )
+
+    # Map the sorted page_content back to the original document objects
+    page_content_to_doc_map = {
+        doc.page_content: doc for doc_list in doc_lists for (doc, orig_score) in doc_list
+    }
+
+    sorted_docs = [
+        (page_content_to_doc_map[page_content], hybrid_score) for (page_content, hybrid_score) in sorted_documents
+    ]
+
+    return sorted_docs[:k]
+
+
 
 def interpolate_results(semantic, keyword, k, verbose=False):
     '''
@@ -426,70 +469,101 @@ def sort_score_search_results(search_result):
 # Search Function
 ############################################################    
 
-def create_bool_filter(filter01, filter02):
-    boolean_filter = {
-        "bool": {
-          "must": [
-            {
-              "match": {
-                "metadata.type": f"{filter01}"
-              }
-            }
-          ],
-          "filter": {
-            "term": {
-              "metadata.source": f"{filter02}"
-            }
-          }
-        }
-    }
+# def create_bool_filter(filter01, filter02):
+#     boolean_filter = {
+#         "bool": {
+#           "must": [
+#             {
+#               "match": {
+#                 "metadata.type": f"{filter01}"
+#               }
+#             }
+#           ],
+#           "filter": {
+#             "term": {
+#               "metadata.source": f"{filter02}"
+#             }
+#           }
+#         }
+#     }
     
-    return boolean_filter
+#     return boolean_filter
 
 from langchain.chains import RetrievalQA
 
-def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose, is_filter, k):
+def run_RetrievalQA(**kwargs):
+
+    chain_types = ["stuff", "map_reduce", "refine"]
+
+    assert "llm" in kwargs, "Check your llm"
+    assert "query" in kwargs, "Check your query"
+    assert "prompt" in kwargs, "Check your prompt"
+    assert "vector_db" in kwargs, "Check your vector_db"
+    assert kwargs.get("chain_type", "stuff") in chain_types, f'Check your chain_type, {chain_types}'
+
+    qa = RetrievalQA.from_chain_type(
+        llm=kwargs["llm"],
+        chain_type=kwargs.get("chain_type", "stuff"),
+        retriever=kwargs["vector_db"].as_retriever(
+            search_type="similarity",
+            search_kwargs={
+                "k": kwargs.get("k", 5),
+                "boolean_filter": kwargs.get("boolean_filter", {})
+            }
+        ),
+        return_source_documents=True,
+        chain_type_kwargs={
+            "prompt": kwargs["prompt"],
+            "verbose": kwargs.get("verbose", False),
+        },
+        verbose=kwargs.get("verbose", False)
+    )
+
+    return qa(kwargs["query"])
+
+
+# def run_RetrievalQA(query, boolean_filter, llm_text, vectro_db, PROMPT, verbose, is_filter, k):
     
-    if is_filter:
-        qa = RetrievalQA.from_chain_type(
-            llm=llm_text,
-            chain_type="stuff",
-            retriever=vectro_db.as_retriever(
-                search_type="similarity",
-                search_kwargs={
-                    "k":k,
-                    "boolean_filter":boolean_filter
-                }
-            ),
-            return_source_documents=True,
-            chain_type_kwargs={
-                "prompt":PROMPT,
-                "verbose":verbose,
-            },
-            verbose=verbose
-        )
+#     if is_filter:
+#         qa = RetrievalQA.from_chain_type(
+#             llm=llm_text,
+#             chain_type="stuff",
+#             retriever=vectro_db.as_retriever(
+#                 search_type="similarity",
+#                 search_kwargs={
+#                     "k":k,
+#                     "boolean_filter":boolean_filter
+#                 }
+#             ),
+#             return_source_documents=True,
+#             chain_type_kwargs={
+#                 "prompt":PROMPT,
+#                 "verbose":verbose,
+#             },
+#             verbose=verbose
+#         )
         
-    else:
-        qa = RetrievalQA.from_chain_type(
-            llm=llm_text,
-            chain_type="stuff",
-            retriever=vectro_db.as_retriever(
-                search_type="similarity",
-                search_kwargs={
-                    "k":k
-                }
-            ),
-            return_source_documents=True,
-            chain_type_kwargs={
-                "prompt": PROMPT,
-                "verbose": verbose,
-            },
-            verbose=verbose
-        )
+#     else:
+#         qa = RetrievalQA.from_chain_type(
+#             llm=llm_text,
+#             chain_type="stuff",
+#             retriever=vectro_db.as_retriever(
+#                 search_type="similarity",
+#                 search_kwargs={
+#                     "k":k
+#                 }
+#             ),
+#             return_source_documents=True,
+#             chain_type_kwargs={
+#                 "prompt": PROMPT,
+#                 "verbose": verbose,
+#             },
+#             verbose=verbose
+#         )
 
-    result = qa(query)
+#     result = qa(query)
 
-    return result
+#     return result
 
 
 def run_RetrievalQA_kendra(query, llm_text, PROMPT, kendra_index_id, k, aws_region, verbose):
@@ -522,46 +596,141 @@ def run_RetrievalQA_kendra(query, llm_text, PROMPT, kendra_index_id, k, aws_regi
     return result 
 
 
-def create_keyword_bool_filter(query, filter01, filter02, k):
-    boolean_filter = {
-            "size": k,
-            "query": {
-                "bool": {
-                  "must": [
-                    {
-                      "match": {
-                        "text": query
-                      }
-                    },
-                    {
-                      "match": {
-                        "metadata.type": filter01
-                      }
-                    }
-                  ],
-                  "filter": [
-                    {
-                      "term": {
-                        "metadata.source.keyword": filter02
-                      }
-                    }
-                  ]
-                }
-            }            
-        }   
+# def create_keyword_bool_filter(query, filter01, filter02, k):
+#     boolean_filter = {
+#             "size": k,
+#             "query": {
+#                 "bool": {
+#                   "must": [
+#                     {
+#                       "match": {
+#                         "text": query
+#                       }
+#                     },
+#                     {
+#                       "match": {
+#                         "metadata.type": filter01
+#                       }
+#                     }
+#                   ],
+#                   "filter": [
+#                     {
+#                       "term": {
+#                         "metadata.source.keyword": filter02
+#                       }
+#                     }
+#                   ]
+#                 }
+#             }            
+#         }   
     
-    return boolean_filter
+#     return boolean_filter
 
 
-
+from pprint import pprint
 from langchain.schema import Document
+from utils.opensearch import opensearch_utils
 
-def get_similiar_docs_with_keyword_score(query, index_name, aws_client,is_filter, filter01=None, filter02=None, k=10):
+# def get_similiar_docs_with_keyword_score(**kwargs):
+
+#     assert "query" in kwargs, "Check your query"
+#     assert "k" in kwargs, "Check your k"
+#     assert "os_client" in kwargs, "Check your os_client"
+#     assert "index_name" in kwargs, "Check your index_name"
+
+#     def normalize_search_formula(score, max_score):
+
+#         return score / max_score
+
+#     def normalize_search_results(search_results):
+
+#         hits = (search_results["hits"]["hits"])
+#         max_score = search_results["hits"]["max_score"]
+#         for hit in hits:
+#             hit["_score"] = normalize_search_formula(hit["_score"], max_score)
+#         search_results["hits"]["max_score"] = hits[0]["_score"]
+#         search_results["hits"]["hits"] = hits
+#         return search_results
+
+#     query = opensearch_utils.get_query(
+#         query=kwargs["query"],
+#         minimum_should_match=kwargs.get("minimum_should_match", 0),
+#         filter=kwargs.get("filter", [])
+#     )
+#     query["size"] = kwargs["k"]
+
+#     print ("keyword search query: ")
+#     pprint (query)
+
+#     search_results = opensearch_utils.search_document(
+#         os_client=kwargs["os_client"],
+#         query=query,
+#         index_name=kwargs["index_name"]
+#     )
+
+#     results = []
+#     if search_results["hits"]["hits"]:
+#         search_results = normalize_search_results(search_results)
+#         for res in search_results["hits"]["hits"]:
+
+#             metadata = res["_source"]["metadata"]
+#             metadata["score"] = res["_score"]
+#             metadata["id"] = res["_id"]
+
+#             doc = Document(
+#                 page_content=res["_source"]["text"],
+#                 metadata=metadata
+#             )
+#             results.append((doc))
+
+#     return results
+
+
+import copy
+from operator import itemgetter
+
+def get_semantic_similar_docs(**kwargs):
+
+    search_types = ["approximate_search", "script_scoring", "painless_scripting"]
+    space_types = ["l2", "l1", "linf", "cosinesimil", "innerproduct", "hammingbit"]
+
+    assert "vector_db" in kwargs, "Check your vector_db"
+    assert "query" in kwargs, "Check your query"
+    assert kwargs.get("search_type", "approximate_search") in search_types, f'Check your search_type: {search_types}'
+    assert kwargs.get("space_type", "l2") in space_types, f'Check your space_type: {space_types}'
+
+    results = kwargs["vector_db"].similarity_search_with_score(
+            query=kwargs["query"],
+            k=kwargs.get("k", 5),
+            search_type=kwargs.get("search_type", "approximate_search"),
+            space_type=kwargs.get("space_type", "l2"),
+            boolean_filter=kwargs.get("boolean_filter", {}),
+            # fetch_k=3,
+        )
     
+    if kwargs.get("hybrid", False):
+        max_score = results[0][1]
+        new_results = []
+        for doc in results:
+            nomalized_score = float(doc[1]/max_score)
+            new_results.append((doc[0], nomalized_score))
+        results = copy.deepcopy(new_results)
+
+    return results
+
+def get_keyword_similar_docs(**kwargs):
+
+    assert "query" in kwargs, "Check your query"
+    assert "k" in kwargs, "Check your k"
+    assert "os_client" in kwargs, "Check your os_client"
+    assert "index_name" in kwargs, "Check your index_name"
+
     def normalize_search_formula(score, max_score):
+
         return score / max_score
 
     def normalize_search_results(search_results):
+
         hits = (search_results["hits"]["hits"])
         max_score = search_results["hits"]["max_score"]
         for hit in hits:
@@ -570,45 +739,43 @@ def get_similiar_docs_with_keyword_score(query, index_name, aws_client,is_filter
         search_results["hits"]["hits"] = hits
         return search_results
 
-    if is_filter: search_query = create_keyword_bool_filter(query, filter01, filter02, k)
-    else:
-        search_query = {
-            "size": k,
-            "query": {
-                "match": {
-                    "text": query
-                }
-            },
-            "_source": ["text"],
-        }
-    
-    search_results = aws_client.search(
-        body=search_query,
-        index=index_name
+    query = opensearch_utils.get_query(
+        query=kwargs["query"],
+        minimum_should_match=kwargs.get("minimum_should_match", 0),
+        filter=kwargs.get("filter", [])
     )
-    
-    # return search_results
-    #print("###############")
-    # print("search_query: \n", search_query)
-    #print("search_results: \n", search_results)
-    #print("###############")
+    query["size"] = kwargs["k"]
+
+    print ("keyword search query: ")
+    pprint (query)
+
+    search_results = opensearch_utils.search_document(
+        os_client=kwargs["os_client"],
+        query=query,
+        index_name=kwargs["index_name"]
+    )
 
     results = []
     if search_results["hits"]["hits"]:
         search_results = normalize_search_results(search_results)
         for res in search_results["hits"]["hits"]:
-            source = res["_source"]["text"].rsplit("\n", 2)[-1].split("Source: ")[-1]
+
+            metadata = res["_source"]["metadata"]
+            #metadata["score"] = res["_score"]
+            metadata["id"] = res["_id"]
+
             doc = Document(
                 page_content=res["_source"]["text"],
-                metadata={'source': source, 'score': res["_score"]}
+                metadata=metadata
             )
-            results.append((doc))
+            if kwargs.get("hybrid", False):
+                results.append((doc, res["_score"]))
+            else:
+                results.append((doc))
 
     return results
 
 
-import copy
-from operator import itemgetter
 
 def get_similiar_docs(query, vectro_db, is_filter, boolean_filter, weight_decay_rate=0, k=5):    
     '''
