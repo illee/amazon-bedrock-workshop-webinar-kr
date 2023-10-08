@@ -255,8 +255,8 @@ def add_doc(aws_client, index_name, document, id):
 
 def search_document(aws_client, query, index_name):
     response = aws_client.search(
-        body = query,
-        index = index_name
+        body=query,
+        index=index_name
     )
     print('\nSearch results:')
     # print(response)
