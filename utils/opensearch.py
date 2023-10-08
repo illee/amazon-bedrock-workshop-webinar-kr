@@ -99,6 +99,30 @@ class opensearch_utils():
             print("There is no response")
 
     @classmethod
+    def opensearch_pretty_print_documents(cls, response):
+        '''
+        OpenSearch 결과인 LIST 를 파싱하는 함수
+        '''
+        for doc, score in response:
+            print(f'\nScore: {score}')
+            print(f'Document Number: {doc.metadata["row"]}')
+
+            # Split the page content into lines
+            lines = doc.page_content.split("\n")
+
+            # Extract and print each piece of information if it exists
+            for line in lines:
+                split_line = line.split(": ")
+                if len(split_line) > 1:
+                    print(f'{split_line[0]}: {split_line[1]}')
+
+            print("Metadata:")
+            print(f'Type: {doc.metadata["type"]}')
+            print(f'Source: {doc.metadata["source"]}')        
+
+            print('-' * 50)
+
+    @classmethod
     def get_query(cls, **kwargs):
 
         # Reference:
@@ -111,7 +135,7 @@ class opensearch_utils():
         if "minimum_should_match" in kwargs:
             min_shoud_match = kwargs["minimum_should_match"]
 
-        QUERY_TEMPLAGE = {
+        QUERY_TEMPLATE = {
             "query": {
                 "bool": {
                     "must": [
@@ -139,6 +163,21 @@ class opensearch_utils():
         }
 
         if "filter" in kwargs:
-            QUERY_TEMPLAGE["query"]["bool"]["filter"].extend(kwargs["filter"])
+            QUERY_TEMPLATE["query"]["bool"]["filter"].extend(kwargs["filter"])
 
-        return QUERY_TEMPLAGE
+        return QUERY_TEMPLATE
+    
+    @classmethod
+    def get_filter(cls, **kwargs):
+
+        BOOL_FILTER_TEMPLATE = {
+            "bool": {
+                "filter": [
+                ]
+            }
+        }
+
+        if "filter" in kwargs:
+            BOOL_FILTER_TEMPLATE["bool"]["filter"].extend(kwargs["filter"])
+
+        return BOOL_FILTER_TEMPLATE
