@@ -469,25 +469,25 @@ def sort_score_search_results(search_result):
 # Search Function
 ############################################################    
 
-# def create_bool_filter(filter01, filter02):
-#     boolean_filter = {
-#         "bool": {
-#           "must": [
-#             {
-#               "match": {
-#                 "metadata.type": f"{filter01}"
-#               }
-#             }
-#           ],
-#           "filter": {
-#             "term": {
-#               "metadata.source": f"{filter02}"
-#             }
-#           }
-#         }
-#     }
+def create_bool_filter(filter01, filter02):
+    boolean_filter = {
+        "bool": {
+          "must": [
+            {
+              "match": {
+                "metadata.type": f"{filter01}"
+              }
+            }
+          ],
+          "filter": {
+            "term": {
+              "metadata.source": f"{filter02}"
+            }
+          }
+        }
+    }
     
-#     return boolean_filter
+    return boolean_filter
 
 from langchain.chains import RetrievalQA
 
@@ -507,7 +507,7 @@ def run_RetrievalQA(**kwargs):
         retriever=kwargs["vector_db"].as_retriever(
             search_type="similarity",
             search_kwargs={
-                "k": kwargs.get("k", 5),
+                "k": kwargs.get("k", kwargs["k"]),
                 "boolean_filter": kwargs.get("boolean_filter", {})
             }
         ),
@@ -958,7 +958,6 @@ class BM25OpenSearchRetriever(BaseRetriever):
                 )
                 results.append((doc))
                 
-        
         return results
 
 
