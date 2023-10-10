@@ -73,7 +73,6 @@ class chat_utils():
             # ConversationSummaryBufferMemory combines the two ideas.
             # It keeps a buffer of recent interactions in memory, but rather than just completely flushing old interactions it compiles them into a summary and uses both. 
             # It uses token length rather than number of interactions to determine when to flush interactions.
-            #memory = ConversationSummaryBufferMemory(kwargs["kwargs"])
 
             assert kwargs.get("llm", None) != None, "Give your LLM"
             memory = ConversationSummaryBufferMemory(
