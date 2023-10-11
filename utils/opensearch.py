@@ -3,8 +3,6 @@ from opensearchpy import OpenSearch, RequestsHttpConnection
 
 class opensearch_utils():
     
-
-
     @classmethod
     def create_aws_opensearch_client(cls, region: str, host: str, http_auth: Tuple[str, str]) -> OpenSearch:
 
@@ -130,6 +128,8 @@ class opensearch_utils():
         #  - https://opensearch.org/docs/latest/query-dsl/compound/bool/
         # OpenSearch match qeury:
         #  - https://opensearch.org/docs/latest/query-dsl/full-text/index/#match-boolean-prefix
+        # OpenSearch Query Description (한글)
+        #  - https://esbook.kimjmin.net/05-search)
 
         min_shoud_match = 0
         if "minimum_should_match" in kwargs:
