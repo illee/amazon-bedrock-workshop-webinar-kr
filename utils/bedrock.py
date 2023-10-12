@@ -9,6 +9,9 @@ from typing import Optional
 import boto3
 from botocore.config import Config
 
+# Langchain
+from langchain.callbacks.base import BaseCallbackHandler
+
 def get_bedrock_client(
     assumed_role: Optional[str] = None,
     endpoint_url: Optional[str] = None,
@@ -102,3 +105,4 @@ class bedrock_info():
         assert model_name in cls._BEDROCK_MODEL_INFO.keys(), "Check model name"
 
         return cls._BEDROCK_MODEL_INFO[model_name]
+    

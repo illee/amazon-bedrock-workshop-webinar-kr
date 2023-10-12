@@ -100,6 +100,11 @@ class ChatUX:
         self.retrievalChain = retrievalChain
         self.out = ipw.Output()
 
+        if "ConversationChain" in str(type(self.qa)):
+            self.streaming = self.qa.llm.streaming
+        elif "ConversationalRetrievalChain" in str(type(self.qa)):
+            self.streaming = self.qa.combine_docs_chain.llm_chain.llm.streaming
+
     def start_chat(self):
         print("Starting chat bot")
         display(self.out)
@@ -125,7 +130,10 @@ class ChatUX:
                 except:
                     result = "No answer"
                 thinking.value=""
-                print_ww(f"AI:{result}")
+                if self.streaming:
+                    response = f"AI:{result}"
+                else:
+                    print_ww(f"AI:{result}")
                 self.name.disabled = True
                 self.b.disabled = True
                 self.name = None
