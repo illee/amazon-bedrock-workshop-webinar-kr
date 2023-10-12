@@ -89,6 +89,16 @@ class chat_utils():
             )
 
         return memory
+    
+    @classmethod
+    def get_tokens(cls, chain, prompt):
+        token = chain.llm.get_num_tokens(prompt)
+        print(f'# tokens: {token}')
+        return token
+
+    @classmethod
+    def clear_memory(cls, chain):
+        return chain.memory.clear()
 
 class ChatUX:
     """ A chat UX using IPWidgets
