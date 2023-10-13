@@ -204,9 +204,9 @@ def search_hybrid(**kwargs):
     )
 
     similar_docs_ensemble = get_ensemble_results(
-        doc_lists = [similar_docs_semantic, similar_docs_keyword],
-        weights = kwargs.get("ensemble_weights", [.5, .5]),
-        algorithm=kwargs.get("fusion_algorithm", "simple_weighted"),
+        doc_lists=[similar_docs_semantic, similar_docs_keyword],
+        weights=kwargs.get("ensemble_weights", [.5, .5]),
+        algorithm=kwargs.get("fusion_algorithm", "RRF"), # ["RRF", "simple_weighted"]
         c=60,
         k=kwargs.get("k", 5)
     )
